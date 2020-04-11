@@ -19,8 +19,8 @@ func TestMarshalMoney(t *testing.T) {
 	t.Logf("result: %s\n", string(result))
 }
 
-func TestGenerateQR(t *testing.T) {
-	config := kbank.KBankAppConfig{
+func TestApp_GenerateQR(t *testing.T) {
+	config := kbank.AppConfig{
 		PartnerID:     "{{YOUR TXN ID}}",
 		PartnerSecret: "{{YOUR PARTNER ID}}",
 		MerchantID:    "{{YOUR PARTNER SECRET}}",
@@ -31,5 +31,5 @@ func TestGenerateQR(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	t.Logf("result: %s\n", response)
+	t.Logf("result: %v\n", response)
 }

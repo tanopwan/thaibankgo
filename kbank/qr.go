@@ -2,8 +2,6 @@ package kbank
 
 import (
 	"bytes"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,31 +10,7 @@ import (
 	"time"
 )
 
-type KBankApp struct {
-	config KBankAppConfig
-}
-
-type KBankAppConfig struct {
-	PartnerID     string
-	PartnerSecret string
-	MerchantID    string
-}
-
-func NewKBankApp(config KBankAppConfig) *KBankApp {
-	return &KBankApp{
-		config: config,
-	}
-}
-
-func generateID() string {
-	b := make([]byte, 7)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
-
-	return hex.EncodeToString(b)
-}
+var qrURL = bankURL + "/pos/qr_request"
 
 type Money float64
 
@@ -62,7 +36,7 @@ type Payload struct {
 	Metadata        string  `json:"metadata"`
 }
 
-type Response struct {
+type QRResponse struct {
 	PartnerTxnUID string `json:"partnerTxnUid"`
 	PartnerID     string `json:"partnerId"`
 	StatusCode    string `json:"statusCode"`
@@ -72,7 +46,7 @@ type Response struct {
 	QRCode        string `json:"qrCode"`
 }
 
-func (a *KBankApp) GenerateQR(amount Money, reference1, metadata string) (Response, error) {
+func (a *App) GenerateQR(amount Money, reference1, metadata string) (QRResponse, error) {
 	data := Payload{
 		// fill struct
 		PartnerTxnUID:   generateID(),
@@ -90,15 +64,15 @@ func (a *KBankApp) GenerateQR(amount Money, reference1, metadata string) (Respon
 	payloadBytes, err := json.Marshal(data)
 	if err != nil {
 		log.Printf("failed to prepare request body with reason: %s\n", err.Error())
-		return Response{}, err
+		return QRResponse{}, err
 	}
 	body := bytes.NewReader(payloadBytes)
 	log.Printf("body: %s", string(payloadBytes))
 
-	req, err := http.NewRequest("POST", "https://APIPORTAL.kasikornbank.com:12002/pos/qr_request", body)
+	req, err := http.NewRequest("POST", qrURL, body)
 	if err != nil {
 		log.Printf("failed to preapre new request KBank Api with reason: %s\n", err.Error())
-		return Response{}, err
+		return QRResponse{}, err
 	}
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Content-Type", "application/json")
@@ -106,22 +80,22 @@ func (a *KBankApp) GenerateQR(amount Money, reference1, metadata string) (Respon
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("failed to call KBank Api with reason: %s\n", err.Error())
-		return Response{}, err
+		return QRResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	bb, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("failed to read response from KBank Api with reason: %s\n", err.Error())
-		return Response{}, err
+		return QRResponse{}, err
 	}
 
-	fmt.Printf(string(bb))
-	var response Response
+	log.Println(string(bb))
+	var response QRResponse
 	err = json.Unmarshal(bb, &response)
 	if err != nil {
 		log.Printf("failed to unmarshal response from KBank Api with reason: %s\n", err.Error())
-		return Response{}, err
+		return QRResponse{}, err
 	}
 
 	return response, nil
