@@ -19,3 +19,18 @@ func TestApp_GetBalance(t *testing.T) {
 
 	t.Logf("result: %v\n", response)
 }
+
+func TestApp_GetTransaction(t *testing.T) {
+	config := kbank.AppConfig{
+		PartnerID:     "{{YOUR TXN ID}}",
+		PartnerSecret: "{{YOUR PARTNER ID}}",
+		MerchantID:    "{{YOUR PARTNER SECRET}}",
+	}
+	app := kbank.NewKBankApp(config)
+	response, err := app.GetTransaction("1111111111")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	t.Logf("result: %v\n", response)
+}
